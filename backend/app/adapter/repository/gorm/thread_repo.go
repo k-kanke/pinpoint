@@ -6,6 +6,7 @@ import (
 
     "github.com/google/uuid"
     "github.com/k-kanke/pinpoint/backend/app/domain/model"
+    "github.com/k-kanke/pinpoint/backend/app/usecase/pin"
     "gorm.io/gorm"
 )
 
@@ -31,9 +32,9 @@ func (r *ThreadRepository) Create(ctx context.Context, t *model.Thread, lat, lon
     })
 }
 
-func (r *ThreadRepository) FindNearby(ctx context.Context, lat, lon float64, radiusMeters int, limit int) ([]model.Thread, error) {
-    var rows []model.Thread
-    q := `SELECT id, title, body, expiry_at, created_at
+func (r *ThreadRepository) FindNearby(ctx context.Context, lat, lon float64, radiusMeters int, limit int) ([]pin.NearbyPin, error) {
+    var rows []pin.NearbyPin
+    q := `SELECT id, title, body, ST_Y(location) AS lat, ST_X(location) AS lon, expiry_at, created_at
           FROM threads
           WHERE location IS NOT NULL
             AND ST_DWithin(location, ST_SetSRID(ST_MakePoint(?, ?), 4326), ?)
@@ -55,4 +56,3 @@ func (r *ThreadRepository) GetByID(ctx context.Context, id uuid.UUID) (*model.Th
     }
     return &t, nil
 }
-

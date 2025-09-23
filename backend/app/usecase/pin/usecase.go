@@ -12,7 +12,7 @@ import (
 // Ports (interfaces) that repositories must implement.
 type ThreadRepo interface {
     Create(ctx context.Context, t *model.Thread, lat, lon float64) error
-    FindNearby(ctx context.Context, lat, lon float64, radiusMeters int, limit int) ([]model.Thread, error)
+    FindNearby(ctx context.Context, lat, lon float64, radiusMeters int, limit int) ([]NearbyPin, error)
     GetByID(ctx context.Context, id uuid.UUID) (*model.Thread, error)
 }
 
@@ -26,7 +26,7 @@ type PhotoRepo interface {
 
 // UseCase interface exposed to handlers.
 type UseCase interface {
-    GetNearby(ctx context.Context, lat, lon float64, radiusMeters, limit int) ([]model.Thread, error)
+    GetNearby(ctx context.Context, lat, lon float64, radiusMeters, limit int) ([]NearbyPin, error)
     CreatePin(ctx context.Context, cmd CreatePinCommand) (uuid.UUID, error)
     GetByID(ctx context.Context, id uuid.UUID) (*model.Thread, error)
     CreateComment(ctx context.Context, threadID uuid.UUID, body string) (uuid.UUID, error)
@@ -52,7 +52,7 @@ type CreatePinCommand struct {
     PhotoURL string
 }
 
-func (u *useCase) GetNearby(ctx context.Context, lat, lon float64, radiusMeters, limit int) ([]model.Thread, error) {
+func (u *useCase) GetNearby(ctx context.Context, lat, lon float64, radiusMeters, limit int) ([]NearbyPin, error) {
     return u.threads.FindNearby(ctx, lat, lon, radiusMeters, limit)
 }
 
@@ -95,4 +95,15 @@ func (u *useCase) AttachPhoto(ctx context.Context, threadID uuid.UUID, url strin
     }
     p := &model.Photo{ThreadID: threadID, URL: url}
     return u.photos.Create(ctx, p)
+}
+
+// NearbyPin is a lightweight DTO used for map listing.
+type NearbyPin struct {
+    ID        uuid.UUID
+    Title     string
+    Body      string
+    Lat       float64
+    Lon       float64
+    ExpiryAt  *time.Time
+    CreatedAt time.Time
 }
