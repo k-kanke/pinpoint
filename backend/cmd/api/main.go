@@ -2,12 +2,12 @@ package main
 
 import (
     "log"
-    "net/http"
 
     httpadapter "github.com/k-kanke/pinpoint/backend/app/adapter/http"
+    gormrepo "github.com/k-kanke/pinpoint/backend/app/adapter/repository/gorm"
     "github.com/k-kanke/pinpoint/backend/app/config"
     pdb "github.com/k-kanke/pinpoint/backend/app/infra/db"
-    "github.com/gin-gonic/gin"
+    "github.com/k-kanke/pinpoint/backend/app/usecase/pin"
 )
 
 func main() {
@@ -24,13 +24,14 @@ func main() {
         log.Fatalf("db migrate error: %v", err)
     }
 
-    // Router
-    r := httpadapter.NewRouter()
-    // Keep existing minimal health endpoint under root as well
-    r.GET("/healthz", func(c *gin.Context) {
-        c.JSON(http.StatusOK, gin.H{"status": "ok"})
-    })
+    // DI wiring
+    threadRepo := gormrepo.NewThreadRepository(gdb)
+    commentRepo := gormrepo.NewCommentRepository(gdb)
+    photoRepo := gormrepo.NewPhotoRepository(gdb)
+    pinUC := pin.New(threadRepo, commentRepo, photoRepo)
 
+    // Router
+    r := httpadapter.NewRouter(cfg, pinUC)
     log.Printf("Starting API on :%s", cfg.APIPort)
     if err := r.Run(":" + cfg.APIPort); err != nil {
         log.Fatal(err)
