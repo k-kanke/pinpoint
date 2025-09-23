@@ -30,6 +30,9 @@ func NewRouter(cfg config.Config, pinUC pin.UseCase) *gin.Engine {
         c.JSON(http.StatusOK, gin.H{"status": "ok"})
     })
 
+    // Static files (uploaded images)
+    r.Static("/static", cfg.UploadDir)
+
     // API routes
     api := r.Group("/api")
     {
@@ -37,8 +40,8 @@ func NewRouter(cfg config.Config, pinUC pin.UseCase) *gin.Engine {
         api.POST("/pins", CreatePinHandler(pinUC))
         api.GET("/pins/:id", GetPinByIDHandler(pinUC))
         api.POST("/pins/:id/comments", CreateCommentHandler(pinUC))
+        api.POST("/pins/:id/photos", UploadPhotoHandler(pinUC, cfg))
     }
 
     return r
 }
-

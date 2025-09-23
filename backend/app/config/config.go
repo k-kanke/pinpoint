@@ -10,6 +10,7 @@ type Config struct {
     DBUser          string
     DBPassword      string
     DBName          string
+    UploadDir       string
 }
 
 func Load() Config {
@@ -21,6 +22,7 @@ func Load() Config {
         DBUser:         getenv("DB_USER", "postgres"),
         DBPassword:     getenv("DB_PASSWORD", "postgres"),
         DBName:         getenv("DB_NAME", "pinpoint"),
+        UploadDir:      getenv("UPLOAD_DIR", "uploads"),
     }
     return cfg
 }
@@ -31,4 +33,3 @@ func getenv(key, def string) string {
     }
     return def
 }
-

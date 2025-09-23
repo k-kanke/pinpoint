@@ -30,6 +30,7 @@ type UseCase interface {
     CreatePin(ctx context.Context, cmd CreatePinCommand) (uuid.UUID, error)
     GetByID(ctx context.Context, id uuid.UUID) (*model.Thread, error)
     CreateComment(ctx context.Context, threadID uuid.UUID, body string) (uuid.UUID, error)
+    AttachPhoto(ctx context.Context, threadID uuid.UUID, url string) error
 }
 
 type useCase struct {
@@ -88,3 +89,10 @@ func (u *useCase) CreateComment(ctx context.Context, threadID uuid.UUID, body st
     return c.ID, nil
 }
 
+func (u *useCase) AttachPhoto(ctx context.Context, threadID uuid.UUID, url string) error {
+    if url == "" {
+        return errors.New("url required")
+    }
+    p := &model.Photo{ThreadID: threadID, URL: url}
+    return u.photos.Create(ctx, p)
+}

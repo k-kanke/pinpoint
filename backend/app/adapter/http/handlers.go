@@ -7,6 +7,7 @@ import (
     "github.com/gin-gonic/gin"
     "github.com/google/uuid"
     "github.com/k-kanke/pinpoint/backend/app/usecase/pin"
+    "github.com/k-kanke/pinpoint/backend/app/config"
 )
 
 type createPinRequest struct {
@@ -117,3 +118,32 @@ func CreateCommentHandler(uc pin.UseCase) gin.HandlerFunc {
     }
 }
 
+// UploadPhotoHandler accepts multipart/form-data (field name: "file") and attaches the photo to a thread.
+func UploadPhotoHandler(uc pin.UseCase, cfg config.Config) gin.HandlerFunc {
+    return func(c *gin.Context) {
+        idStr := c.Param("id")
+        threadID, err := uuid.Parse(idStr)
+        if err != nil {
+            c.JSON(http.StatusBadRequest, gin.H{"error": "invalid id"})
+            return
+        }
+        file, err := c.FormFile("file")
+        if err != nil {
+            c.JSON(http.StatusBadRequest, gin.H{"error": "file is required"})
+            return
+        }
+        // Basic MIME/size checks can be added here
+        // Save file
+        path, publicURL, err := saveUploadedFile(cfg.UploadDir, file)
+        if err != nil {
+            c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+            return
+        }
+        // Persist Photo entity via UC by reusing CreatePin photo method would be odd; provide a dedicated call
+        if err := uc.AttachPhoto(c.Request.Context(), threadID, publicURL); err != nil {
+            c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+            return
+        }
+        c.JSON(http.StatusCreated, gin.H{"url": publicURL, "path": path})
+    }
+}
